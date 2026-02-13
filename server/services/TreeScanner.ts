@@ -4,7 +4,9 @@ import type { TreeNode } from "../types";
 
 let cachedTree: TreeNode | null = null;
 let cachedRoot: string | null = null;
-const PREFERRED_ROOT = resolve(process.env.MONITOR_ROOT || join(process.env.HOME || "/Users/will", "github"));
+const PREFERRED_ROOT = resolve(
+  process.env.MONITOR_ROOT || join(process.env.HOME || "", "github")
+);
 
 const IGNORE = new Set([
   "node_modules",
@@ -52,13 +54,18 @@ async function scanDirectory(
   return node;
 }
 
-function normalizeRoot(_path: string): string {
-  // Keep visualization anchored to a single workspace root.
-  return PREFERRED_ROOT;
+export function validateRootPath(path: string): boolean {
+  if (!path) return false;
+  const resolved = resolve(path);
+  return resolved === PREFERRED_ROOT || resolved.startsWith(PREFERRED_ROOT + "/");
 }
 
 export async function setRoot(path: string): Promise<TreeNode> {
-  const normalizedRoot = normalizeRoot(path);
+  if (!validateRootPath(path)) {
+    // Fall back to PREFERRED_ROOT if validation fails
+    path = PREFERRED_ROOT;
+  }
+  const normalizedRoot = resolve(path);
   if (cachedTree && cachedRoot === normalizedRoot) {
     return cachedTree;
   }

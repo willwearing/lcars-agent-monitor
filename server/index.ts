@@ -3,7 +3,9 @@ import { cors } from "hono/cors";
 import { serveStatic } from "hono/bun";
 import type { ServerWebSocket } from "bun";
 import { normalizeIncomingPayload } from "./adapters";
+import { cleanupStalePendingSubagents } from "./adapters/claude";
 import { isIngestAuthorized } from "./services/Auth";
+import { RateLimiter } from "./services/RateLimiter";
 import { setRoot, getTree, getRoot, getPreferredRoot } from "./services/TreeScanner";
 import {
   applyCanonicalEvent,
@@ -16,8 +18,21 @@ import type { CanonicalEventV2 } from "./types";
 
 const app = new Hono();
 
-// CORS for development
-app.use("/api/*", cors());
+// CORS – restrict to known origins (default: localhost dev servers)
+const CORS_ORIGINS = (process.env.CORS_ORIGINS || "http://localhost:5173,http://localhost:3001")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+app.use(
+  "/api/*",
+  cors({
+    origin: CORS_ORIGINS,
+  })
+);
+
+// Rate limiter for event ingestion (60 burst, 20/sec sustained)
+const eventLimiter = new RateLimiter({ burst: 60, sustainedPerSec: 20 });
 
 // Store connected WebSocket clients
 const clients = new Set<ServerWebSocket<unknown>>();
@@ -40,6 +55,12 @@ app.post("/api/events", async (c) => {
   try {
     if (!isIngestAuthorized(c)) {
       return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    // Rate limit by IP (or fallback to "unknown")
+    const clientIp = c.req.header("x-forwarded-for") || c.req.header("x-real-ip") || "unknown";
+    if (!eventLimiter.allow(clientIp)) {
+      return c.json({ error: "Rate limit exceeded" }, 429);
     }
 
     const payload = await c.req.json();
@@ -89,7 +110,7 @@ app.post("/api/set-root", async (c) => {
 app.use("/*", serveStatic({ root: "./client/dist" }));
 app.use("/*", serveStatic({ root: "./client/dist", path: "index.html" }));
 
-// Cleanup stale agents periodically
+// Cleanup stale agents and pending subagents periodically
 setInterval(() => {
   const removed = cleanupStaleAgents();
   for (const agent of removed) {
@@ -98,6 +119,7 @@ setInterval(() => {
   for (const provider of recomputeProviderHealth()) {
     broadcast({ type: "provider_update", providerHealth: provider });
   }
+  cleanupStalePendingSubagents();
 }, 5000);
 
 // Start server with WebSocket support
@@ -179,7 +201,6 @@ async function processCanonicalEvent(event: CanonicalEventV2): Promise<void> {
     await setRoot(getRoot()!);
     const newTree = JSON.stringify(getTree());
     if (oldTree !== newTree) {
-      console.log(`[Server] Tree changed after ${event.tool_name}, broadcasting update`);
       broadcast({ type: "tree_update", tree: getTree(), root: getRoot() });
     }
   }

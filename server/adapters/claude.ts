@@ -4,7 +4,10 @@ import type { AgentStatus, CanonicalEventV2, HookEvent } from "../types";
 interface PendingSubagent {
   subagentType: string;
   description: string;
+  createdAt: number;
 }
+
+const PENDING_SUBAGENT_TTL = 120_000; // 2 minutes
 
 const pendingSubagents = new Map<string, PendingSubagent[]>();
 
@@ -20,6 +23,37 @@ function shiftPendingSubagent(sessionId: string): PendingSubagent | null {
   const item = queue.shift() ?? null;
   if (queue.length === 0) pendingSubagents.delete(sessionId);
   return item;
+}
+
+export function getPendingSubagentCount(): number {
+  let count = 0;
+  for (const queue of pendingSubagents.values()) {
+    count += queue.length;
+  }
+  return count;
+}
+
+export function cleanupStalePendingSubagents(
+  now = Date.now(),
+  ttl = PENDING_SUBAGENT_TTL
+): number {
+  let removed = 0;
+  for (const [sessionId, queue] of pendingSubagents.entries()) {
+    const before = queue.length;
+    const fresh = queue.filter((item) => now - item.createdAt < ttl);
+    removed += before - fresh.length;
+    if (fresh.length === 0) {
+      pendingSubagents.delete(sessionId);
+    } else {
+      pendingSubagents.set(sessionId, fresh);
+    }
+  }
+  return removed;
+}
+
+/** Reset state -- only for tests. */
+export function resetPendingSubagents(): void {
+  pendingSubagents.clear();
 }
 
 function toolToStatus(tool?: string): AgentStatus {
@@ -95,6 +129,7 @@ export function normalizeClaudeHookEvent(event: HookEvent): CanonicalEventV2[] {
     queuePendingSubagent(event.session_id, {
       subagentType: event.tool_input.subagent_type || "general-purpose",
       description: event.tool_input.description || "Subagent",
+      createdAt: event.timestamp ?? Date.now(),
     });
     return [
       {

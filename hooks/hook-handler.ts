@@ -10,8 +10,15 @@
  */
 
 const SERVER_URL = process.env.VISUALIZER_URL || "http://localhost:3001";
-const DEBUG_LOG = "/tmp/lcars-hook-debug.log";
 const MONITOR_KEY = process.env.MONITOR_INGEST_KEY || "";
+const DEBUG = process.env.LCARS_DEBUG === "1";
+const DEBUG_LOG = "/tmp/lcars-hook-debug.log";
+
+async function debugLog(msg: string) {
+  if (!DEBUG) return;
+  const fs = await import("fs/promises");
+  await fs.appendFile(DEBUG_LOG, `${new Date().toISOString()} - ${msg}\n`);
+}
 
 async function main() {
   try {
@@ -20,10 +27,7 @@ async function main() {
     if (!input.trim()) return;
 
     const data = JSON.parse(input);
-
-    // Debug: log raw hook data to file using appendFile for reliability
-    const fs = await import("fs/promises");
-    await fs.appendFile(DEBUG_LOG, `${new Date().toISOString()} - ${JSON.stringify(data)}\n`);
+    await debugLog(JSON.stringify(data));
 
     // POST to visualization server
     const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -37,8 +41,7 @@ async function main() {
       }),
     });
   } catch (err) {
-    // Log errors to debug file
-    await Bun.write(DEBUG_LOG, `${new Date().toISOString()} - ERROR: ${err}\n`, { append: true });
+    await debugLog(`ERROR: ${err}`);
   }
 }
 

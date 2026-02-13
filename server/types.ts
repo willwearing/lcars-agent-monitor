@@ -1,28 +1,13 @@
-export type Provider = "claude" | "codex";
-export type AgentStatus = "idle" | "reading" | "writing" | "executing";
+// Re-export shared types
+export type {
+  Provider,
+  AgentStatus,
+  Agent,
+  TreeNode,
+  ProviderHealth,
+} from "../shared/types";
 
-export interface Agent {
-  id: string;
-  provider: Provider;
-  sessionId: string;
-  stableSessionId: string;
-  stableAgentId: string;
-  type: "main" | "subagent";
-  name: string;
-  currentFile: string | null;
-  status: AgentStatus;
-  lastActivity: number;
-  workspace?: string;
-  providerUser?: string;
-  stoppingAt?: number; // When subagent stopped (for delayed removal)
-}
-
-export interface TreeNode {
-  id: string;
-  name: string;
-  type: "file" | "folder";
-  children?: TreeNode[];
-}
+// Server-only types below
 
 export interface HookEvent {
   session_id: string;
@@ -59,7 +44,7 @@ export type CanonicalEventType =
 
 export interface CanonicalEventV2 {
   schema_version: "v2";
-  provider: Provider;
+  provider: import("../shared/types").Provider;
   provider_user?: string;
   workspace?: string;
   session_id: string;
@@ -69,15 +54,7 @@ export interface CanonicalEventV2 {
   tool_name?: string;
   tool_input?: Record<string, unknown>;
   file_path?: string;
-  status?: AgentStatus;
+  status?: import("../shared/types").AgentStatus;
   message?: string;
   raw?: unknown;
-}
-
-export interface ProviderHealth {
-  provider: Provider;
-  status: "healthy" | "degraded" | "offline";
-  lastEventAt: number | null;
-  totalEvents: number;
-  droppedEvents: number;
 }

@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
+import { resolve } from "node:path";
 
 const API_URL = "http://localhost:3001";
+const PROJECT_ROOT = resolve(import.meta.dirname, "..");
 
 // Helper: send a hook event to the server (simulates Claude Code activity)
 async function sendHookEvent(event: object) {
@@ -53,9 +55,9 @@ test.describe("LCARS Agent Monitor", () => {
       hook_event_name: "PreToolUse",
       tool_name: "Read",
       tool_input: {
-        file_path: "/Users/will/github/lcars-agent-monitor/client/src/App.tsx",
+        file_path: `${PROJECT_ROOT}/client/src/App.tsx`,
       },
-      cwd: "/Users/will/github/lcars-agent-monitor",
+      cwd: PROJECT_ROOT,
     });
 
     // Agent chip for "SCANNING" (reading) should appear
@@ -72,9 +74,9 @@ test.describe("LCARS Agent Monitor", () => {
       hook_event_name: "PreToolUse",
       tool_name: "Read",
       tool_input: {
-        file_path: "/Users/will/github/lcars-agent-monitor/package.json",
+        file_path: `${PROJECT_ROOT}/package.json`,
       },
-      cwd: "/Users/will/github/lcars-agent-monitor",
+      cwd: PROJECT_ROOT,
     });
 
     // The 3D scene container should appear (has data-testid="scene3d")
@@ -93,8 +95,8 @@ test.describe("LCARS Agent Monitor", () => {
       session_id: "test-multi-read",
       hook_event_name: "PreToolUse",
       tool_name: "Read",
-      tool_input: { file_path: "/Users/will/github/lcars-agent-monitor/server/index.ts" },
-      cwd: "/Users/will/github/lcars-agent-monitor",
+      tool_input: { file_path: `${PROJECT_ROOT}/server/index.ts` },
+      cwd: PROJECT_ROOT,
     });
 
     // Send writing agent
@@ -102,8 +104,8 @@ test.describe("LCARS Agent Monitor", () => {
       session_id: "test-multi-write",
       hook_event_name: "PreToolUse",
       tool_name: "Write",
-      tool_input: { file_path: "/Users/will/github/lcars-agent-monitor/client/src/test.ts" },
-      cwd: "/Users/will/github/lcars-agent-monitor",
+      tool_input: { file_path: `${PROJECT_ROOT}/client/src/test.ts` },
+      cwd: PROJECT_ROOT,
     });
 
     // Send executing agent
@@ -112,7 +114,7 @@ test.describe("LCARS Agent Monitor", () => {
       hook_event_name: "PreToolUse",
       tool_name: "Bash",
       tool_input: { command: "bun test" },
-      cwd: "/Users/will/github/lcars-agent-monitor",
+      cwd: PROJECT_ROOT,
     });
 
     // All three status chips should appear

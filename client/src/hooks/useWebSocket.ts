@@ -11,15 +11,18 @@ const RECONNECT_DELAY = 2000
 
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null)
+  const shouldReconnectRef = useRef(true)
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const setConnected = useStore((s) => s.setConnected)
   const handleMessage = useStore((s) => s.handleMessage)
 
   const connect = useCallback(() => {
+    if (!shouldReconnectRef.current) return
+
     const ws = new WebSocket(WS_URL)
     wsRef.current = ws
 
     ws.onopen = () => {
-      console.log('WebSocket connected')
       setConnected(true)
     }
 
@@ -33,9 +36,10 @@ export function useWebSocket() {
     }
 
     ws.onclose = () => {
-      console.log('WebSocket disconnected, reconnecting...')
       setConnected(false)
-      setTimeout(connect, RECONNECT_DELAY)
+      if (shouldReconnectRef.current) {
+        reconnectTimerRef.current = setTimeout(connect, RECONNECT_DELAY)
+      }
     }
 
     ws.onerror = (error) => {
@@ -45,8 +49,14 @@ export function useWebSocket() {
   }, [setConnected, handleMessage])
 
   useEffect(() => {
+    shouldReconnectRef.current = true
     connect()
     return () => {
+      shouldReconnectRef.current = false
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current)
+        reconnectTimerRef.current = null
+      }
       wsRef.current?.close()
     }
   }, [connect])
