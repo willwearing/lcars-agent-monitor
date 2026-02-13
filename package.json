@@ -1,0 +1,40 @@
+{
+  "name": "lcars-agent-monitor",
+  "module": "server/index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"bun run dev:server\" \"bun run dev:client\"",
+    "dev:server": "bun --watch server/index.ts",
+    "dev:client": "vite client",
+    "bridge:codex": "bun scripts/codex-bridge.ts",
+    "build": "vite build client",
+    "start": "bun server/index.ts",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.9",
+    "hono": "^4.11.5",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "zustand": "^5.0.10",
+    "three": "latest",
+    "@react-three/fiber": "latest",
+    "@react-three/drei": "latest",
+    "@react-three/postprocessing": "latest"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^25.0.10",
+    "@types/react": "^19.2.9",
+    "@types/react-dom": "^19.2.3",
+    "@types/three": "latest",
+    "@vitejs/plugin-react": "^5.1.2",
+    "@playwright/test": "^1.58.0",
+    "concurrently": "^9.2.1",
+    "typescript": "^5",
+    "vite": "^7.3.1",
+    "vitest": "latest"
+  }
+}
