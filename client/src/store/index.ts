@@ -43,7 +43,7 @@ interface AppState {
   setAllProviders: () => void
 }
 
-const MIN_DISPLAY_MS = 3000
+const MIN_DISPLAY_MS = 5_000
 const DEPTH_RETRACT_DELAY_MS = 5000
 
 function updateVisibleDepth(
