@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Stars, PerspectiveCamera } from '@react-three/drei'
 import { TreeGraph3D } from './TreeGraph3D'
 import { AgentFleet } from './AgentFleet'
+import { AutoPanController } from './AutoPanController'
 import { useStore } from '../../store'
 
 export function Scene3D() {
@@ -31,6 +32,7 @@ export function Scene3D() {
         <Stars radius={150} depth={60} count={3000} factor={4} saturation={0} />
         <TreeGraph3D />
         <AgentFleet />
+        <AutoPanController controlsRef={controlsRef} />
       </Canvas>
     </div>
   )
