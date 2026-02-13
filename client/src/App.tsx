@@ -3,6 +3,7 @@ import { useStore } from './store'
 import { BridgeBanner } from './components/HUD/BridgeBanner'
 import { AgentDetailPanel } from './components/HUD/AgentDetailPanel'
 import { OperationsPanel } from './components/HUD/OperationsPanel'
+import { ViewportControls } from './components/HUD/ViewportControls'
 import { Scene3D } from './components/Scene3D'
 import './styles/lcars.css'
 
@@ -27,6 +28,7 @@ export default function App() {
       </div>
       <OperationsPanel />
       <AgentDetailPanel />
+      {tree && <ViewportControls />}
     </div>
   )
 }
