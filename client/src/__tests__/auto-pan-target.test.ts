@@ -22,11 +22,25 @@ describe('computeAutoPanTarget', () => {
     expect(computeAutoPanTarget(agents, nodes, null)).toBeNull()
   })
 
-  it('returns null when all agents are idle', () => {
+  it('returns position when agent is idle but locatable', () => {
     const agents: MinimalAgent[] = [
       { id: 'a1', currentFile: '/root/src', status: 'idle' },
     ]
-    expect(computeAutoPanTarget(agents, nodes, null)).toBeNull()
+    expect(computeAutoPanTarget(agents, nodes, null)).toEqual([5, -1.9, 0])
+  })
+
+  it('returns root position when agents are not locatable and root is provided', () => {
+    const agents: MinimalAgent[] = [
+      { id: 'a1', currentFile: null, status: 'idle' },
+    ]
+    const target = computeAutoPanTarget(agents, nodes, '/root')
+    expect(target).toEqual([0, 0, 0])
+  })
+
+  it('returns root position when agents list is empty and root is provided', () => {
+    const agents: MinimalAgent[] = []
+    const target = computeAutoPanTarget(agents, nodes, '/root')
+    expect(target).toEqual([0, 0, 0])
   })
 
   it('returns position of the node an active agent is working in', () => {
@@ -44,6 +58,15 @@ describe('computeAutoPanTarget', () => {
     ]
     const target = computeAutoPanTarget(agents, nodes, null)
     // Average of [5, -1.9, 0] and [-5, -1.9, 0]
+    expect(target).toEqual([0, -1.9, 0])
+  })
+
+  it('includes idle agents when computing centroid', () => {
+    const agents: MinimalAgent[] = [
+      { id: 'a1', currentFile: '/root/src', status: 'idle' },
+      { id: 'a2', currentFile: '/root/tests', status: 'writing' },
+    ]
+    const target = computeAutoPanTarget(agents, nodes, null)
     expect(target).toEqual([0, -1.9, 0])
   })
 

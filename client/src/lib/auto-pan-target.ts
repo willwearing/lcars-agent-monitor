@@ -21,7 +21,6 @@ export function computeAutoPanTarget(
   const positions: [number, number, number][] = []
 
   for (const agent of agents) {
-    if (agent.status === 'idle') continue
     const filePath = agent.currentFile || agent.workspace
     if (!filePath) continue
 
@@ -45,7 +44,14 @@ export function computeAutoPanTarget(
     }
   }
 
-  if (positions.length === 0) return null
+  if (positions.length === 0) {
+    // No locatable agents — fall back to root so camera drifts back to overview
+    if (root) {
+      const rootNode = nodeMap.get(root)
+      if (rootNode) return rootNode.position
+    }
+    return null
+  }
 
   const sum: [number, number, number] = [0, 0, 0]
   for (const pos of positions) {
